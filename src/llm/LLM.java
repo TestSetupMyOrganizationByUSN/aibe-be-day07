@@ -5,6 +5,13 @@ import web_client.WebClient;
 public class LLM extends WebClient implements ILLM {
 
 
+    public LLM() {
+        super();
+    }
+    @Override
+    public <T> T callAPI(LLMModel model) {
+        return null;
+    }
 }
 
 interface ILLM {// 이것을 한국어와 한글, 몇몇 고유명사의 경우 영어만 사용하여 번역하고 쓸데없는 다른 표현은 모두 생략해
@@ -32,16 +39,8 @@ interface ILLM {// 이것을 한국어와 한글, 몇몇 고유명사의 경우 
             this.name = name;
             this.functions = functions;
         }
-
-
-        public String getName() {
-            return name;
-        }
-
-        public String[] getFunctions() {
-            return functions;
-        }
     }
+    <T> T callAPI(LLMModel model);
 }
 // https://console.groq.com/playground
 // https://console.groq.com/docs/models
