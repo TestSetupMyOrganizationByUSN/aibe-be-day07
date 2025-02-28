@@ -2,6 +2,8 @@ package llm;
 
 import web_client.WebClient;
 
+import java.io.IOException;
+
 public class LLM extends WebClient implements ILLM {
 
 
@@ -9,38 +11,81 @@ public class LLM extends WebClient implements ILLM {
         super();
     }
     @Override
-    public <T> T callAPI(LLMModel model) {
-        return null;
+    public String callAPI(LLMModel model, String body) {
+        String path = "";
+        HttpMethod method = HttpMethod.GET;
+        String[] headers = null;
+        String apiKey = "";
+
+        switch (model.platform) {
+            case GOOGLE -> {
+                path = "https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s"
+                        .formatted(model.name, model.action.name, model.platform.apiKey);
+                method = HttpMethod.POST;
+                headers = new String[] {"Content-Type", "application/json"};
+            }
+            case GROQ -> {
+            }
+            case TOGETHER_AI -> {
+            }
+        }
+
+
+        try {
+            return sendRequest(makeRequest(path, method, body, headers));
+        } catch (IOException | InterruptedException e) {
+            logger.severe(e.toString());
+            throw new RuntimeException(e);
+        }
     }
 }
 
-interface ILLM {// 이것을 한국어와 한글, 몇몇 고유명사의 경우 영어만 사용하여 번역하고 쓸데없는 다른 표현은 모두 생략해
+interface ILLM {
     enum LLMPlatform {
-        GOOGLE, GROQ, TOGETHER_AI
+        GOOGLE(System.getenv("GEMINI_API_KEY")),
+        GROQ(System.getenv("GROQ_API_KEY")),
+        TOGETHER_AI(System.getenv("TOGETHER_AI_API_KEY"));
+
+        final String apiKey;
+        LLMPlatform(String apiKey) {
+            this.apiKey = apiKey;
+        }
     }
     enum LLMModel {
         GEMINI_2_0_FLASH(
                 LLMPlatform.GOOGLE,
                 "gemini-2.0-flash",
-                "generateContent"),
+                LLMAction.GENERATE_CONTENT),
         MIXTRAL_8x7b_32768(
                 LLMPlatform.GROQ,
-                "mixtral-8x7b-32768"),
+                "mixtral-8x7b-32768",
+                null),
         STABLE_DIFFUSION_XL_BASE_1_0(
                 LLMPlatform.TOGETHER_AI,
-                "stabilityai/stable-diffusion-xl-base-1.0");
+                "stabilityai/stable-diffusion-xl-base-1.0",
+                null);
 
-        final private LLMPlatform platform;
-        final private String name;
-        final private String[] functions;
+        final public LLMPlatform platform;
+        final public String name;
+        final public LLMAction action;
 
-        LLMModel(LLMPlatform platform, String name, String ...functions) {
+        LLMModel(LLMPlatform platform, String name, LLMAction action) {
             this.platform = platform;
             this.name = name;
-            this.functions = functions;
+            this.action = action;
         }
+
+        enum LLMAction {
+            GENERATE_CONTENT("generateContent");
+            final String name;
+
+            LLMAction(String name) {
+                this.name = name;
+            }
+        }
+
     }
-    <T> T callAPI(LLMModel model);
+    String callAPI(LLMModel model, String body);
 }
 // https://console.groq.com/playground
 // https://console.groq.com/docs/models
